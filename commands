@@ -428,25 +428,25 @@ case "$1" in
     ;;
   help)
     cat && cat<<EOF
-    psql:console     <app>                     Launch a postgresql console for a given app
-    psql:env         <app>                     Get generated environment variables for <app>
-    psql:url         <app>                     Get DATABASE_URL for <app>
-    psql:create      <app>                     Create a Postgresql database
-    psql:delete      <app>                     Delete specified Postgresql database
-    psql:link        <app> <another_app>       Give environment variable of database of <app> to <another_app>
-    psql:unlink      <another_app>             Unlink <another_app> to a database
-    psql:dump_sql    <app> > <filename.sql>    Dump database to SQL format
-    psql:restore_sql <app> < <filename.sql>    Restore database from SQL format
-    psql:dump_tar    <app> > <filename.tar>    Dump database to tar format
-    psql:restore_tar <app> < <filename.tar>    Restore database from tar format
-    psql:admin_console                         Launch a postgresql console as admin user
-    psql:restart                               Restart the Postgresql docker container and linked app
-    psql:start                                 Start the Postgresql docker container if it isn't running
-    psql:stop                                  Stop the Postgresql docker container
-    psql:status                                Shows status of Postgresql
-    psql:list                                  List all databases
-    psql:update                                Update this plugin
-    psql:migrate                               Migrate
+    psql:console     <app>                          Launch a postgresql console for a given app
+    psql:env         <app>                          Get generated environment variables for <app>
+    psql:url         <app>                          Get DATABASE_URL for <app>
+    psql:create      <app>                          Create a Postgresql database
+    psql:delete      <app>                          Delete specified Postgresql database
+    psql:link        <app> <another_app>            Give environment variable of database of <app> to <another_app>
+    psql:unlink      <another_app>                  Unlink <another_app> to a database
+    psql:dump_sql    <app> > <filename.sql>         Dump database to SQL format
+    psql:restore_sql <app> < <filename.sql>         Restore database from SQL format
+    psql:dump_tar    <app> > <filename.tar>         Dump database to tar format
+    psql:restore_tar <app> < <filename.tar>         Restore database from tar format
+    psql:admin_console                              Launch a postgresql console as admin user
+    psql:restart                                    Restart the Postgresql docker container and linked app
+    psql:start                                      Start the Postgresql docker container if it isn't running
+    psql:stop                                       Stop the Postgresql docker container
+    psql:status                                     Shows status of Postgresql
+    psql:list                                       List all databases
+    psql:update                                     Update this plugin
+    psql:migrate                                    Migrate
 EOF
     ;;
 esac
