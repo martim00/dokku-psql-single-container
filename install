@@ -1,7 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE  ]] && set -x
 
-if [[ ! -z "$DOKKU_DEV" ]]; then
-  ./commands psql:install
-else
-  dokku psql:install
-fi
+dokku psql:install

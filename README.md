@@ -5,8 +5,7 @@ Project: https://github.com/progrium/dokku
 ## Installation
 
 ```
-cd /var/lib/dokku/plugins
-git clone https://github.com/ohardy/dokku-psql psql
+git clone https://github.com/Flink/dokku-psql /var/lib/dokku/plugins/psql
 dokku plugins-install
 ```
 
@@ -21,10 +20,8 @@ $ dokku help
     psql:delete      <app>                     Delete specified Postgresql database
     psql:link        <app> <another_app>       Give environment variable of database of <app> to <another_app>
     psql:unlink      <another_app>             Unlink <another_app> to a database
-    psql:dump_sql    <app> > <filename.sql>    Dump database to SQL format
-    psql:restore_sql <app> < <filename.sql>    Restore database from SQL format
-    psql:dump_tar    <app> > <filename.tar>    Dump database to tar format
-    psql:restore_tar <app> < <filename.tar>    Restore database from tar format
+    psql:dump        <app> > <filename.dump>   Dump database to PG dump format
+    psql:restore     <app> < <filename.*>      Restore database from any format exported by pg_dump
     psql:admin_console                         Launch a postgresql console as admin user
     psql:restart                               Restart the Postgresql docker container and linked app
     psql:start                                 Start the Postgresql docker container if it isn't running
@@ -86,25 +83,16 @@ $ dokku psql:create foo            # Server side
 $ ssh dokku@server psql:create foo # Client side
 ```
 
-### Dump database to SQL:
+### Dump database:
 ```
-$ dokku psql:dump_sql foo filename.sql # Server side
-```
-
-### Restore database from SQL:
-```
-$ dokku psql:restore_sql foo filename.sql # Server side
+$ dokku psql:dump foo > filename.dump # Server side
 ```
 
-### Dump database to tar:
+### Restore database from dump:
 ```
-$ dokku psql:dump_tar foo filename.tar # Server side
+$ dokku psql:restore foo < filename.dump # Server side
 ```
 
-### Restore database from tar:
-```
-$ dokku psql:restore_tar foo filename.tar # Server side
-```
 ### Copy database foo to database bar using pipe:
 ```
 $ dokku psql:dump foo | dokku psql:restore bar # Server side

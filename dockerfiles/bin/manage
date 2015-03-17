@@ -1,10 +1,4 @@
 #!/bin/bash
-#set -e;
-
-# ip=$(netstat -nr | grep '^0\.0\.0\.0' | awk '{print $2}')
-
-ip=$DB_PORT_5432_TCP_ADDR
-port=$DB_PORT_5432_TCP_PORT
 
 case "$1" in
   start)
@@ -13,68 +7,43 @@ case "$1" in
     su postgres -c "/usr/lib/postgresql/9.3/bin/postgres -D /var/lib/postgresql/9.3/main -c config_file=/etc/postgresql/9.3/main/postgresql.conf"
   ;;
 
-  init)
-    admin_pw=$2
-
-    chown -R postgres:postgres /var/lib/postgresql/9.3/main
-    chmod -R 700 /var/lib/postgresql/9.3/main
-    su postgres -c "/usr/lib/postgresql/9.3/bin/postgres --single -D /var/lib/postgresql/9.3/main -c config_file=/etc/postgresql/9.3/main/postgresql.conf <<< \"CREATE USER root WITH SUPERUSER PASSWORD '$admin_pw';\""
-  ;;
   create)
     name=$2
-    admin_pw=$3
-    database_pw=$4
-
-    PGPASSWORD="$admin_pw" PGUSER=root psql -h "$ip" -p "$port" -w template1 <<< "CREATE USER \"${name}\" WITH PASSWORD '${database_pw}';"
-    PGPASSWORD="$admin_pw" PGUSER=root psql -h "$ip" -p "$port" -w template1 <<< "CREATE DATABASE \"${name}\";"
-    PGPASSWORD="$admin_pw" PGUSER=root psql -h "$ip" -p "$port" -w template1 <<< "GRANT ALL PRIVILEGES ON DATABASE \"${name}\" to \"${name}\";"
+    database_pw=$3
+    su - postgres -c "psql --command \"CREATE USER $name WITH PASSWORD '$database_pw';\""
+    su - postgres -c "createdb -E utf8 -O $name $name"
+    su - postgres -c "psql --command \"GRANT ALL PRIVILEGES ON DATABASE $name TO $name;\""
   ;;
+
   delete)
     name=$2
-    admin_pw=$3
-
-    PGPASSWORD="$admin_pw" PGUSER=root psql -h "$ip" -p "$port" -w template1 <<< "DROP DATABASE \"${name}\";"
-    PGPASSWORD="$admin_pw" PGUSER=root psql -h "$ip" -p "$port" -w template1 <<< "DROP USER \"${name}\";"
+    su - postgres -c "dropdb $name"
+    su - postgres -c "dropuser $name"
   ;;
+
   admin_console)
-    admin_pw=$2
-
-    PGPASSWORD="$admin_pw" PGUSER=root psql -h "$ip" -p "$port" postgres
+    su - postgres -c psql
   ;;
+
   list)
-    admin_pw=$2
+    su - postgres -c "psql --command \"\\l\""
+  ;;
 
-    PGPASSWORD="$admin_pw" PGUSER=root psql -h "$ip" -p "$port" -w template1 <<< "\list"
-  ;;
-  dump_sql)
+  dump)
     name=$2
-    filename=$3
-    admin_pw=$4
-    PGPASSWORD="$admin_pw" PGUSER=root pg_dump -w -h "$ip" -p "$port" -f "/shared/$filename" "$name"
+    passwd=$3
+    PGPASSWORD="$passwd" pg_dump -Fc --no-acl --no-owner -h localhost -U $name -w $name
   ;;
-  restore_sql)
+
+  restore)
     name=$2
-    filename=$3
-    admin_pw=$4
-    PGPASSWORD="$admin_pw" PGUSER=root psql -h "$ip" -p "$port" -d "$name" < "/shared/$filename"
-  ;;
-  dump_tar)
-    name=$2
-    filename=$3
-    admin_pw=$4
-    PGPASSWORD="$admin_pw" PGUSER=root pg_dump -F t -w -h "$ip" -p "$port" -f "/shared/$filename" "$name"
-  ;;
-  restore_tar)
-    name=$2
-    filename=$3
-    admin_pw=$4
-    PGPASSWORD="$admin_pw" PGUSER=root pg_restore -c -C -w -h "$ip" -p "$port" -d "$name" "/shared/$filename"
+    passwd=$3
+    PGPASSWORD="$passwd" pg_restore -h localhost -cO -d $name -U $name -w
   ;;
   console)
     name=$2
     database_pw=$3
-
-    PGPASSWORD="$database_pw" PGUSER="$name" psql -h "$ip" -p "$port" "$name"
+    PGPASSWORD="$database_pw" psql -h localhost -U $name $name
   ;;
   bash)
     bash
@@ -82,18 +51,4 @@ case "$1" in
   cmd)
     bash -c "$2"
   ;;
-#   help)
-#     cat && cat<<EOF
-#     admin_console Launch a postgresql console as admin user
-#     console <app> Launch a postgresql console for a given app
-#     create <app>  Create a Postgresql database
-#     delete <app>  Delete specified Postgresql database
-#     start         Start the Postgresql docker container if it isn't running
-#     stop          Stop the Postgresql docker container
-#     status        Shows status of Postgresql
-#     dump          Dump database
-#     restore       Restore database
-#     list          List all databases
-# EOF
-#   ;;
 esac

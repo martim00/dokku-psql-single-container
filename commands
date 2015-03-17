@@ -1,24 +1,16 @@
 #!/bin/bash
 #set -e;
 
-_path=".o_psql"
-version="1.1"
-db_image="ohardy/postgresql"
-
-APP=$2
-OLDHOME=$HOME
-HOME="$DOKKU_ROOT/$_path"
-
 check_already_exists() {
   if [[ -f "$HOME/pass_$APP" ]]; then
-    echo "Database configured already exists with name : $APP"
+    echo "Database $APP already exists."
     exit 1
   fi
 }
 
 check_exists() {
   if [[ ! -f "$HOME/pass_$APP" ]]; then
-    echo "No database configured with name : $APP"
+    echo "No database configured with name: $APP"
     exit 1
   fi
 }
@@ -38,46 +30,22 @@ check_container() {
 }
 
 load_ip_and_container() {
-  id=$(docker ps | grep "$db_image":latest | grep "manage start" | awk '{print $1}')
-  container_name=""
+  id=$(docker ps -f status=running | grep "$db_image":latest | awk '{print $1}')
   if [[ -n "$id" ]]; then
     private_ip=$(docker inspect ${id} | grep IPAddress | awk '{ print $2 }' | tr -d ',"')
     port=5432
-    container_name=$(docker inspect -f "{{ .Name }}" $id)
   fi
-
-  if [[ -n "$container_name" ]]; then
-    _manage="-v $HOME/shared:/shared --link $container_name:db $db_image"
-  else
-    _manage="-v $HOME/shared:/shared $db_image"
-  fi
-}
-
-manage_ti() {
-  docker run -t -i $_manage $*
-}
-
-manage() {
-  docker run $_manage $*
-}
-
-do_bash() {
-  _envs=$(env_for)
-  _cmd="docker run -t -i $_envs $db_image bash"
-  $_cmd
 }
 
 db_url() {
   _app=$1
-
   _database=$(cat "$HOME/db_$_app")
   _database_pw=$(cat "$HOME/pass_$_app")
-
   echo "postgresql://${_database}:${_database_pw}@${private_ip}:${port}/${_database}"
 }
 
 database_name() {
-  echo "$1" | cut -c 1-32 | tr .- _
+  echo "$1" | tr .- _
 }
 
 migrate() {
@@ -88,12 +56,10 @@ migrate() {
       _app_to_migrate=$(echo "$f" | cut -d _ -f 2)
       _database=$(database_name "$_app_to_migrate")
       echo "$_database" > "$HOME/db_$_app_to_migrate"
-
       if [[ -d "$DOKKU_ROOT/$_app_to_migrate" ]]; then
         dokku config:unset "$_app_to_migrate" DATABASE_URL
       fi
     done
-
   fi
   echo "$version" > "$HOME/version"
 }
@@ -128,8 +94,7 @@ restart_app() {
   _app=$1
   if [[ -n "$_app" ]]&&[[ -d "$DOKKU_ROOT/$_app" ]]; then
     echo "-----> Restarting application : $_app"
-    dokku release $_app
-    dokku deploy $_app
+    dokku ps:restart $_app
   fi
 }
 
@@ -154,37 +119,37 @@ restart_apps() {
   done
 }
 
-load_ip_and_container
+if [[ $1 == psql:* ]]; then
+  _path=".o_psql"
+  version="1.1"
+  db_image="flink/dokku-psql"
 
-admin_pw=""
-if [[ -f "$HOME/admin_pw" ]]; then
-  admin_pw=$(cat "$HOME/admin_pw")
+  APP=$2
+  OLDHOME=$HOME
+  HOME="$DOKKU_ROOT/$_path"
+
+  load_ip_and_container
 fi
 
 case "$1" in
   psql:admin_console)
     check_container
-
-    manage_ti admin_console "$admin_pw"
+    docker exec -it $id manage admin_console
     ;;
 
   psql:console)
     check_container
     check_app
     check_exists
-
     database=$(cat "$HOME/db_$APP")
     database_pw=$(cat "$HOME/pass_$APP")
-
-    manage_ti console "$database" "$database_pw"
-
+    docker exec -it $id manage console "$database" "$database_pw"
     ;;
 
   psql:url)
     check_container
     check_app
     check_exists
-
     if [[ -f "$HOME/db_$APP" ]]; then
       db_url "$APP"
     elif [[ -f "$HOME/link_$APP" ]]; then
@@ -192,57 +157,41 @@ case "$1" in
       db_url "$APP"
     fi
     ;;
+
   psql:create)
     check_container
     check_app
     check_already_exists
-
     new_password=$(openssl rand -base64 32|base64)
     database=$(database_name "$APP")
     echo $database > "$HOME/db_$APP"
     echo $new_password > "$HOME/pass_$APP"
-    chmod 700 "$HOME/db_$APP"
-    chmod 700 "$HOME/pass_$APP"
-
-    manage create "$database" "$admin_pw" "$new_password"
-
+    chmod 600 "$HOME/db_$APP" "$HOME/pass_$APP"
+    docker exec $id manage create "$database" "$new_password"
     ;;
 
   psql:delete)
     check_container
     check_app
     check_exists
-
     database=$(cat "$HOME/db_$APP")
-    manage delete "$database" "$admin_pw"
-
+    docker exec $id manage delete "$database"
     rm -f "$HOME/db_$APP"
     rm -f "$HOME/pass_$APP"
     ;;
 
   psql:list)
     check_container
-
-    manage list "$admin_pw"
-    ;;
-
-  psql:bash)
-    do_bash
+    docker exec -t $id manage list
     ;;
 
   psql:pre_build)
     if [[ -z "$id" ]]; then
       if [[ -d "$DOKKU_ROOT/$APP" ]]; then
-        if [[ -n "$DOKKU_DEV" ]]; then
-          ./commands psql:start
-        else
-          dokku psql:start
-        fi
-
+        dokku psql:start
         sleep 5
       fi
     fi
-
     ;;
 
   psql:start)
@@ -256,21 +205,8 @@ case "$1" in
     ;;
 
   psql:restart)
-    if [[ ! -z "$DOKKU_DEV" ]]; then
-      ./commands psql:stop
-      ./commands psql:start
-    else
-      dokku psql:stop
-      dokku psql:start
-    fi
-    ;;
-
-  psql:init)
-    if [[ "$id" != "" ]]; then
-      echo "Postgresql container already running with ID: ${id}"
-    else
-      docker run -v "$HOME/data":"/var/lib/postgresql/9.3/main" "$db_image" init "$admin_pw"
-    fi
+    dokku psql:stop
+    dokku psql:start
     ;;
 
   psql:stop)
@@ -279,64 +215,22 @@ case "$1" in
     docker stop ${id}
     ;;
 
-  psql:dump_sql)
+  psql:dump)
     check_container
     check_app
     check_exists
-
     database=$(cat "$HOME/db_$APP")
-
-    name=$(openssl rand -base64 32|base64)
-    manage dump_sql "$database" "$name" "$admin_pw"
-
-    if [[ -f "$HOME/shared/$name" ]]; then
-      cat "$HOME/shared/$name"
-      rm -f "$HOME/shared/$name"
-    fi
+    passwd=$(cat "$HOME/pass_$APP")
+    docker exec -i $id manage dump "$database" "$passwd"
     ;;
 
-  psql:restore_sql)
+  psql:restore)
     check_container
     check_app
     check_exists
-
     database=$(cat "$HOME/db_$APP")
-
-    name=$(openssl rand -base64 32|base64)
-    cat - > "$HOME/shared/$name"
-
-    manage restore_sql "$database" "$name" "$admin_pw"
-    rm -f "$HOME/shared/$name"
-    ;;
-
-  psql:dump_tar)
-    check_container
-    check_app
-    check_exists
-
-    database=$(cat "$HOME/db_$APP")
-
-    name=$(openssl rand -base64 32|base64)
-    manage dump_tar "$database" "$name" "$admin_pw"
-
-    if [[ -f "$HOME/shared/$name" ]]; then
-      cat "$HOME/shared/$name"
-      rm -f "$HOME/shared/$name"
-    fi
-    ;;
-
-  psql:restore_tar)
-    check_container
-    check_app
-    check_exists
-
-    database=$(cat "$HOME/db_$APP")
-
-    name=$(openssl rand -base64 32|base64)
-    cat - > "$HOME/shared/$name"
-
-    manage restore_tar "$database" "$name" "$admin_pw"
-    rm -f "$HOME/shared/$name"
+    passwd=$(cat "$HOME/pass_$APP")
+    cat - | docker exec -i $id manage restore "$database" "$passwd"
     ;;
 
   psql:status)
@@ -355,10 +249,8 @@ case "$1" in
     check_container
     check_app
     check_exists
-
     if [[ ! -f "$HOME/link_$3" ]]; then
       echo "$APP" > "$HOME/link_$3"
-
       restart_app $3
     else
       echo "A link already exist for $3"
@@ -369,13 +261,12 @@ case "$1" in
     check_container
     check_app
     check_exists
-
     if [[ -f "$HOME/link_$APP" ]]; then
       rm -f "$HOME/link_$APP"
     fi
-
     restart_app $APP
     ;;
+
   psql:env)
     env_for $APP
     ;;
@@ -383,37 +274,21 @@ case "$1" in
   psql:install)
     if [[ -d "$HOME" ]]; then
       migrate
-      echo "Postgresql data already exist in "$HOME", installation aborded "
     fi
 
     if [[ ! -d "$HOME" ]]; then
       mkdir -p "$HOME/data"
       mkdir -p "$HOME/shared"
-
       docker run "$db_image" cmd "cd /var/lib/postgresql/9.3/main && tar -cp ./" | tar -x -C "$HOME/data/" -f -
       docker run "$db_image" cmd "rm -rf /var/lib/postgresql/9.3/main && mkdir -p /var/lib/postgresql/9.3/main"
       docker run "$db_image" cmd "chown -R postgres:postgres /var/lib/postgresql/9.3/main"
-
-      if [[ ! -f "$HOME/admin_pw" ]]; then
-        admin_pw=$(openssl rand -base64 32|base64)
-        echo $admin_pw > "$HOME/admin_pw"
-
-        chown -R dokku: "$HOME"
-        chmod 700 "$HOME/admin_pw"
-
-        if [[ ! -z "$DOKKU_DEV" ]]; then
-          ./commands psql:init
-        else
-          dokku psql:init
-        fi
-      fi
     fi
     ;;
+
   psql:update)
     if [[ $(id -un) = "dokku" ]]; then
       dokku plugins-update
     fi
-
     DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     if [[ -d "$DIR/.git" ]]; then
       pushd "$DIR"
@@ -426,6 +301,7 @@ case "$1" in
       popd
     fi
     ;;
+
   help)
     cat && cat<<EOF
     psql:console     <app>                          Launch a postgresql console for a given app
@@ -435,10 +311,8 @@ case "$1" in
     psql:delete      <app>                          Delete specified Postgresql database
     psql:link        <app> <another_app>            Give environment variable of database of <app> to <another_app>
     psql:unlink      <another_app>                  Unlink <another_app> to a database
-    psql:dump_sql    <app> > <filename.sql>         Dump database to SQL format
-    psql:restore_sql <app> < <filename.sql>         Restore database from SQL format
-    psql:dump_tar    <app> > <filename.tar>         Dump database to tar format
-    psql:restore_tar <app> < <filename.tar>         Restore database from tar format
+    psql:dump        <app> > <filename.dump>        Dump database to PG dump format
+    psql:restore     <app> < <filename.*>           Restore database from any format exported by pg_dump
     psql:admin_console                              Launch a postgresql console as admin user
     psql:restart                                    Restart the Postgresql docker container and linked app
     psql:start                                      Start the Postgresql docker container if it isn't running
