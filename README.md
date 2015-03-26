@@ -28,16 +28,6 @@ $ dokku help
     psql:stop                                  Stop the Postgresql docker container
     psql:status                                Shows status of Postgresql
     psql:list                                  List all databases
-    psql:update                                Update this plugin
-    psql:migrate                               Migrate
-```
-
-## Updating this plugin
-Dokku doesn't handle plugin update. I made a pull request to dokku for that (https://github.com/progrium/dokku/pull/669)
-
-So, each time you update this plugin with `git pull`, you need to call:
-```
-$ dokku psql:migrate
 ```
 
 ## Info

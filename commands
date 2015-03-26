@@ -48,45 +48,21 @@ database_name() {
   echo "$1" | tr .- _
 }
 
-migrate() {
-  if [[ ! -f "$HOME/version" ]]; then
-    cd "$HOME"
-    _files=$(ls pass_* 2> /dev/null)
-    for f in $_files; do
-      _app_to_migrate=$(echo "$f" | cut -d _ -f 2)
-      _database=$(database_name "$_app_to_migrate")
-      echo "$_database" > "$HOME/db_$_app_to_migrate"
-      if [[ -d "$DOKKU_ROOT/$_app_to_migrate" ]]; then
-        dokku config:unset "$_app_to_migrate" DATABASE_URL
-      fi
-    done
-  fi
-  echo "$version" > "$HOME/version"
-}
-
 env_for() {
-  if [[ -n "$1" ]]; then
-    _app=$1
-    if [[ -f "$HOME/db_$_app" ]]; then
-      _url=$(db_url "$APP")
-    elif [[ -f "$HOME/link_$_app" ]]; then
-      _app=$(cat "$HOME/link_$_app")
-      _url=$(db_url "$_app")
+  _app=$1
+  if [[ -f "$HOME/db_$_app" ]]; then
+    _url=$(db_url "$APP")
+  elif [[ -f "$HOME/link_$_app" ]]; then
+    _app=$(cat "$HOME/link_$_app")
+    _url=$(db_url "$_app")
+  fi
+
+  if [[ -n "$_url" ]]; then
+    if [[ -f "$HOME/db_$_app" ]]&&[[ -f "$HOME/pass_$_app" ]]; then
+      _database=$(cat "$HOME/db_$_app")
+      _database_pw=$(cat "$HOME/pass_$_app")
+      echo "-e DATABASE_URL=$_url -e POSTGRESQL_URL=$_url -e DB_TYPE=postgresql -e DB_HOST=$private_ip -e DB_PORT=$port -e DB_NAME=$_database -e DB_USER=$_database -e DB_PASS=$_database_pw"
     fi
-
-    if [[ -n "$_url" ]]; then
-      if [[ -f "$HOME/db_$_app" ]]&&[[ -f "$HOME/pass_$_app" ]]; then
-        _database=$(cat "$HOME/db_$_app")
-        _database_pw=$(cat "$HOME/pass_$_app")
-
-        echo "-e DATABASE_URL=$_url -e POSTGRESQL_URL=$_url -e DB_TYPE=postgresql -e DB_HOST=$private_ip -e DB_PORT=$port -e DB_NAME=$_database -e DB_USER=$_database -e DB_PASS=$_database_pw"
-      fi
-    fi
-  else
-    _database_pw=$(cat "$HOME/admin_pw")
-
-    echo "-e DB_HOST=$private_ip -e DB_PORT=$port -e DB_USER=root -e DB_PASS=$_database_pw"
-
   fi
 }
 
@@ -121,7 +97,6 @@ restart_apps() {
 
 if [[ $1 == psql:* ]]; then
   _path=".o_psql"
-  version="1.1"
   db_image="flink/dokku-psql"
 
   APP=$2
@@ -241,10 +216,6 @@ case "$1" in
     fi
     ;;
 
-  psql:migrate)
-    migrate
-    ;;
-
   psql:link)
     check_container
     check_app
@@ -272,32 +243,11 @@ case "$1" in
     ;;
 
   psql:install)
-    if [[ -d "$HOME" ]]; then
-      migrate
-    fi
-
     if [[ ! -d "$HOME" ]]; then
       mkdir -p "$HOME/data"
       docker run "$db_image" cmd "cd /var/lib/postgresql/9.3/main && tar -cp ./" | tar -x -C "$HOME/data/" -f -
       docker run "$db_image" cmd "rm -rf /var/lib/postgresql/9.3/main && mkdir -p /var/lib/postgresql/9.3/main"
       docker run "$db_image" cmd "chown -R postgres:postgres /var/lib/postgresql/9.3/main"
-    fi
-    ;;
-
-  psql:update)
-    if [[ $(id -un) = "dokku" ]]; then
-      dokku plugins-update
-    fi
-    DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    if [[ -d "$DIR/.git" ]]; then
-      pushd "$DIR"
-      dokku psql:stop
-      sudo git pull
-      docker rmi "$db_image"
-      docker pull "$db_image"
-      dokku psql:migrate
-      dokku psql:start
-      popd
     fi
     ;;
 
@@ -318,8 +268,6 @@ case "$1" in
     psql:stop                                       Stop the Postgresql docker container
     psql:status                                     Shows status of Postgresql
     psql:list                                       List all databases
-    psql:update                                     Update this plugin
-    psql:migrate                                    Migrate
 EOF
     ;;
 esac
