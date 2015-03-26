@@ -278,7 +278,6 @@ case "$1" in
 
     if [[ ! -d "$HOME" ]]; then
       mkdir -p "$HOME/data"
-      mkdir -p "$HOME/shared"
       docker run "$db_image" cmd "cd /var/lib/postgresql/9.3/main && tar -cp ./" | tar -x -C "$HOME/data/" -f -
       docker run "$db_image" cmd "rm -rf /var/lib/postgresql/9.3/main && mkdir -p /var/lib/postgresql/9.3/main"
       docker run "$db_image" cmd "chown -R postgres:postgres /var/lib/postgresql/9.3/main"
