@@ -182,7 +182,7 @@ case "$1" in
 
   psql:list)
     check_container
-    docker exec -t $id env TERM=$TERM manage list
+    docker exec -it $id env TERM=$TERM manage list
     ;;
 
   psql:pre_build)
