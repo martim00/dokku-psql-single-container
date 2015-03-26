@@ -134,7 +134,7 @@ fi
 case "$1" in
   psql:admin_console)
     check_container
-    docker exec -it $id manage admin_console
+    docker exec -it $id env TERM=$TERM manage admin_console
     ;;
 
   psql:console)
@@ -143,7 +143,7 @@ case "$1" in
     check_exists
     database=$(cat "$HOME/db_$APP")
     database_pw=$(cat "$HOME/pass_$APP")
-    docker exec -it $id manage console "$database" "$database_pw"
+    docker exec -it $id env TERM=$TERM manage console "$database" "$database_pw"
     ;;
 
   psql:url)
@@ -182,7 +182,7 @@ case "$1" in
 
   psql:list)
     check_container
-    docker exec -t $id manage list
+    docker exec -t $id env TERM=$TERM manage list
     ;;
 
   psql:pre_build)
