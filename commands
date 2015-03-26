@@ -113,18 +113,14 @@ case "$1" in
     ;;
 
   psql:console)
-    check_container
-    check_app
-    check_exists
+    check_container && check_app && check_exists
     database=$(cat "$HOME/db_$APP")
     database_pw=$(cat "$HOME/pass_$APP")
     docker exec -it $id env TERM=$TERM manage console "$database" "$database_pw"
     ;;
 
   psql:url)
-    check_container
-    check_app
-    check_exists
+    check_container && check_app && check_exists
     if [[ -f "$HOME/db_$APP" ]]; then
       db_url "$APP"
     elif [[ -f "$HOME/link_$APP" ]]; then
@@ -134,9 +130,7 @@ case "$1" in
     ;;
 
   psql:create)
-    check_container
-    check_app
-    check_already_exists
+    check_container && check_app && check_already_exists
     new_password=$(openssl rand -base64 32|base64)
     database=$(database_name "$APP")
     echo $database > "$HOME/db_$APP"
@@ -146,9 +140,7 @@ case "$1" in
     ;;
 
   psql:delete)
-    check_container
-    check_app
-    check_exists
+    check_container && check_app && check_exists
     database=$(cat "$HOME/db_$APP")
     docker exec $id manage delete "$database"
     rm -f "$HOME/db_$APP"
@@ -191,18 +183,14 @@ case "$1" in
     ;;
 
   psql:dump)
-    check_container
-    check_app
-    check_exists
+    check_container && check_app && check_exists
     database=$(cat "$HOME/db_$APP")
     passwd=$(cat "$HOME/pass_$APP")
     docker exec -i $id manage dump "$database" "$passwd"
     ;;
 
   psql:restore)
-    check_container
-    check_app
-    check_exists
+    check_container && check_app && check_exists
     database=$(cat "$HOME/db_$APP")
     passwd=$(cat "$HOME/pass_$APP")
     cat - | docker exec -i $id manage restore "$database" "$passwd"
@@ -217,9 +205,7 @@ case "$1" in
     ;;
 
   psql:link)
-    check_container
-    check_app
-    check_exists
+    check_container && check_app && check_exists
     if [[ ! -f "$HOME/link_$3" ]]; then
       echo "$APP" > "$HOME/link_$3"
       restart_app $3
@@ -229,9 +215,7 @@ case "$1" in
     ;;
 
   psql:unlink)
-    check_container
-    check_app
-    check_exists
+    check_container && check_app && check_exists
     if [[ -f "$HOME/link_$APP" ]]; then
       rm -f "$HOME/link_$APP"
     fi
