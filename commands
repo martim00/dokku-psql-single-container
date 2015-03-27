@@ -1,32 +1,22 @@
-#!/bin/bash
-#set -e;
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+source "$(dirname $0)/../common/functions"
+set +e
 
 check_already_exists() {
-  if [[ -f "$HOME/pass_$APP" ]]; then
-    echo "Database $APP already exists."
-    exit 1
-  fi
+  [[ -f "$HOME/pass_$APP" ]] && echo "Database for $APP already exists" && exit 1
 }
 
 check_exists() {
-  if [[ ! -f "$HOME/pass_$APP" ]]; then
-    echo "No database configured with name: $APP"
-    exit 1
-  fi
+  [[ ! -f "$HOME/pass_$APP" ]] && echo "No database configured for $APP" && exit 1
 }
 
 check_app() {
-  if [[ -z "$APP" ]]; then
-    echo "You must specify an app name"
-    exit 1
-  fi
+  [[ -z "$APP" ]] && echo "Please specify an app to run the command on" && exit 1
 }
 
 check_container() {
-  if [[ -z "$id" ]]; then
-    echo "Postgresql container not started cannot continue. Start with dokku psql:start"
-    exit 1
-  fi
+  [[ -z "$id" ]] && echo "Postgresql container not started. Start with dokku psql:start" && exit 1
 }
 
 load_ip_and_container() {
@@ -61,9 +51,9 @@ env_for() {
 restart_apps() {
   load_ip_and_container
   for APP_NAME in $(find "$DOKKU_ROOT/.o_psql/"* -maxdepth 0 -name 'db*' -printf '%f\n' | sed 's/.*db_//'); do
-    echo "-----> Setting config vars for $APP_NAME"
+    dokku_log_info1 "Setting config vars for $APP_NAME"
     dokku config:set-norestart "$APP_NAME" $(env_for "$APP_NAME") &> /dev/null
-    echo "-----> Restarting application: $APP_NAME"
+    dokku_log_info1 "Restarting application: $APP_NAME"
     dokku ps:restart $APP_NAME
   done
 }
@@ -87,41 +77,41 @@ case "$1" in
     ;;
 
   psql:console)
-    check_container && check_app && check_exists
+    check_container; check_app; verify_app_name "$APP"; check_exists
     database=$(cat "$HOME/db_$APP")
     database_pw=$(cat "$HOME/pass_$APP")
     docker exec -it $id env TERM=$TERM manage console "$database" "$database_pw"
     ;;
 
   psql:url)
-    check_container && check_app && check_exists
+    check_container; check_app; verify_app_name "$APP"; check_exists
     db_url "$APP"
     ;;
 
   psql:create)
-    check_container && check_app && check_already_exists
+    check_container; check_app; verify_app_name "$APP"; check_already_exists
     new_password=$(openssl rand -hex 32)
     database=$(database_name "$APP")
     echo $database > "$HOME/db_$APP"
     echo $new_password > "$HOME/pass_$APP"
     chmod 600 "$HOME/db_$APP" "$HOME/pass_$APP"
-    echo "-----> Creating database $APP"
+    dokku_log_info1 "Creating database $APP"
     docker exec $id manage create "$database" "$new_password" > /dev/null
     if [[ -d "$APP_ROOT" ]]; then
-      echo "-----> Setting config vars for $APP"
+      dokku_log_info1 "Setting config vars for $APP"
       dokku config:set-norestart "$APP" $(env_for "$APP") &> /dev/null
     fi
     ;;
 
   psql:delete)
-    check_container && check_app && check_exists
+    check_container; check_app; verify_app_name "$APP"; check_exists
     database=$(cat "$HOME/db_$APP")
-    echo "-----> Deleting database $APP"
+    dokku_log_info1 "Deleting database $APP"
     docker exec $id manage delete "$database" > /dev/null
     rm -f "$HOME/db_$APP"
     rm -f "$HOME/pass_$APP"
     if [[ -d "$APP_ROOT" ]]; then
-      echo "-----> Unsetting config vars for $APP"
+      dokku_log_info1 "Unsetting config vars for $APP"
       dokku config:unset-norestart "$APP" DATABASE_URL POSTGRESQL_URL DB_TYPE DB_HOST DB_PORT DB_NAME DB_USER DB_PASS &> /dev/null
     fi
     ;;
@@ -145,7 +135,7 @@ case "$1" in
       echo "Postgresql container already running with ID: ${id}"
       exit 1
     fi
-    echo "-----> Starting Postgresql server"
+    dokku_log_info1 "Starting Postgresql server"
     docker run -d -v $HOME/data:/var/lib/postgresql/9.3/main "$db_image" start
     restart_apps
     ;;
@@ -157,29 +147,26 @@ case "$1" in
 
   psql:stop)
     check_container
-    echo "-----> Stopping Postgresql server"
+    dokku_log_info1 "Stopping Postgresql server"
     docker stop ${id}
     ;;
 
   psql:dump)
-    check_container && check_app && check_exists
+    check_container; check_app; verify_app_name "$APP"; check_exists
     database=$(cat "$HOME/db_$APP")
     passwd=$(cat "$HOME/pass_$APP")
     docker exec -i $id manage dump "$database" "$passwd"
     ;;
 
   psql:restore)
-    check_container && check_app && check_exists
+    check_container; check_app; verify_app_name "$APP"; check_exists
     database=$(cat "$HOME/db_$APP")
     passwd=$(cat "$HOME/pass_$APP")
     cat - | docker exec -i $id manage restore "$database" "$passwd"
     ;;
 
   psql:status)
-    if [[ -n "$id" ]]; then
-      echo "Postgresql container running with ID: ${id}"
-      exit 0
-    fi
+    [[ -n "$id" ]] && echo "Postgresql container running with ID: ${id}" && exit 0
     echo "Postgresql container not running"
     ;;
 
