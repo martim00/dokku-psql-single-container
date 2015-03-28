@@ -104,7 +104,7 @@ case "$1" in
     ;;
 
   psql:delete)
-    check_container; check_app; verify_app_name "$APP"; check_exists
+    check_container; check_app; check_exists
     database=$(cat "$HOME/db_$APP")
     dokku_log_info1 "Deleting database $APP"
     docker exec $id manage delete "$database" > /dev/null
