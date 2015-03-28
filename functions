@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE  ]] && set -x
+
+APP=$2
+PSQL_ROOT="$DOKKU_ROOT/.o_psql"
+PSQL_IMAGE="flink/dokku-psql"
+
+check_already_exists() {
+  [[ -f "$PSQL_ROOT/pass_$APP" ]] && echo "Database for $APP already exists" && exit 1
+}
+
+check_exists() {
+  [[ ! -f "$PSQL_ROOT/pass_$APP" ]] && echo "No database configured for $APP" && exit 1
+}
+
+check_app() {
+  [[ -z "$APP" ]] && echo "Please specify an app to run the command on" && exit 1
+}
+
+check_container() {
+  [[ -z "$id" ]] && echo "Postgresql container not started. Start with dokku psql:start" && exit 1
+}
+
+load_ip_and_container() {
+  id=$(docker ps -f status=running | grep "$PSQL_IMAGE":latest | awk '{print $1}') || true
+  if [[ -n "$id" ]]; then
+    private_ip=$(docker inspect ${id} | grep IPAddress | awk '{ print $2 }' | tr -d ',"')
+    port=5432
+  fi
+}
+
+db_url() {
+  _app=$1
+  _database=$(cat "$PSQL_ROOT/db_$_app")
+  _database_pw=$(cat "$PSQL_ROOT/pass_$_app")
+  echo "postgresql://${_database}:${_database_pw}@${private_ip}:${port}/${_database}"
+}
+
+database_name() {
+  echo "$1" | tr .- _
+}
+
+env_for() {
+  _app=$1
+  if [[ -f "$PSQL_ROOT/db_$_app" ]] && [[ -f "$PSQL_ROOT/pass_$_app" ]]; then
+    _url=$(db_url "$_app")
+    _database=$(cat "$PSQL_ROOT/db_$_app")
+    _database_pw=$(cat "$PSQL_ROOT/pass_$_app")
+    echo "DATABASE_URL=$_url POSTGRESQL_URL=$_url DB_TYPE=postgresql DB_HOST=$private_ip DB_PORT=$port DB_NAME=$_database DB_USER=$_database DB_PASS=$_database_pw"
+  fi
+}
+
+restart_apps() {
+  load_ip_and_container
+  for APP_NAME in $(find "$DOKKU_ROOT/.o_psql/"* -maxdepth 0 -name 'db*' -printf '%f\n' | sed 's/.*db_//'); do
+    set_env_for "$APP_NAME"
+    dokku_log_info2 "Restarting application: $APP_NAME"
+    dokku ps:restart $APP_NAME
+  done
+}
+
+set_env_for() {
+  local APP="$1"
+  dokku_log_info1 "Setting config vars for $APP"
+  dokku config:set-norestart "$APP" $(env_for "$APP") &> /dev/null
+}

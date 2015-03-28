@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE  ]] && set -x
+source "$(dirname $0)/functions"
 
-dokku psql:install
+[[ -d "$PSQL_ROOT" ]] && exit 0
+mkdir -p "$PSQL_ROOT/data"
+docker run "$PSQL_IMAGE" cmd "cd /var/lib/postgresql/9.3/main && tar -cp ./" | tar -x -C "$PSQL_PLUGIN_ROOT/data/" -f -
+docker run "$PSQL_IMAGE" cmd "rm -rf /var/lib/postgresql/9.3/main && mkdir -p /var/lib/postgresql/9.3/main"
+docker run "$PSQL_IMAGE" cmd "chown -R postgres:postgres /var/lib/postgresql/9.3/main"
