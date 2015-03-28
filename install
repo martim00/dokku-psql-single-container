@@ -4,6 +4,5 @@ source "$(dirname $0)/functions"
 
 [[ -d "$PSQL_ROOT" ]] && exit 0
 mkdir -p "$PSQL_ROOT/data"
-docker run "$PSQL_IMAGE" cmd "cd /var/lib/postgresql/9.3/main && tar -cp ./" | tar -x -C "$PSQL_PLUGIN_ROOT/data/" -f -
-docker run "$PSQL_IMAGE" cmd "rm -rf /var/lib/postgresql/9.3/main && mkdir -p /var/lib/postgresql/9.3/main"
-docker run "$PSQL_IMAGE" cmd "chown -R postgres:postgres /var/lib/postgresql/9.3/main"
+PASSWORD=$(openssl rand -hex 32)
+docker run -v "$PSQL_ROOT/data":/var/lib/postgresql/data -d -e POSTGRES_PASSWORD=$PASSWORD --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE"
