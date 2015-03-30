@@ -1,11 +1,13 @@
-# PostgreSQL plugin for Dokku
+# dokku-psql-single-container
 
-Project: https://github.com/progrium/dokku
+dokku-psql-single-container is a plugin for [dokku][dokku] that provides a Postgresql server in a single container for your applications.
+
+It uses the official Postgresql docker image (version 9.3).
 
 ## Installation
 
 ```
-git clone https://github.com/Flink/dokku-psql /var/lib/dokku/plugins/psql
+git clone https://github.com/Flink/dokku-psql-single-container /var/lib/dokku/plugins/psql-sc
 dokku plugins-install
 ```
 
@@ -30,12 +32,14 @@ $ dokku help
 ## Info
 This plugin adds the following environment variables to your app automatically (they are available via `dokku config`):
 
-* DATABASE_URL
-* DB_HOST
-* DB_PORT
-* DB_NAME
-* DB_USER
-* DB_PASS
+* DATABASE\_URL
+* DB\_HOST
+* DB\_NAME
+* DB\_PASS
+* DB\_PORT
+* DB\_TYPE
+* DB\_USER
+* POSTGRESQL\_URL
 
 ## Usage
 
@@ -77,3 +81,13 @@ $ dokku psql:restore foo < filename.dump # Server side
 ```
 $ dokku psql:dump foo | dokku psql:restore bar # Server side
 ```
+
+## Acknowledgements
+
+This plugin is based originally on the [one by Olivier Hardy](https://github.com/ohardy/dokku-psql).
+
+## License
+
+This plugin is released under the MIT license. See the file [LICENSE](LICENSE).
+
+[dokku]: https://github.com/progrium/dokku
