@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE  ]] && set -x
+source "$(dirname $0)/functions"
 
-dokku psql:install
+[[ -d "$PSQL_ROOT" ]] && exit 0
+mkdir -p "$PSQL_ROOT/data"
+PASSWORD=$(openssl rand -hex 32)
+docker run -v "$PSQL_ROOT/data":/var/lib/postgresql/data -d -e POSTGRES_PASSWORD=$PASSWORD --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE"

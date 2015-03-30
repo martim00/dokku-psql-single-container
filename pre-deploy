@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
-
-dokku psql:pre_build $1
