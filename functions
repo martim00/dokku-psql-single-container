@@ -65,3 +65,8 @@ set_env_for() {
   dokku_log_info1 "Setting config vars for $APP"
   dokku config:set-norestart "$APP" $(env_for "$APP") &> /dev/null
 }
+
+interactive_docker_exec() {
+  local TTY_OPT=$([[ -t 0 ]] && echo "--tty")
+  docker exec --interactive $TTY_OPT "$@"
+}
