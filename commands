@@ -5,7 +5,7 @@ source "$(dirname $0)/functions"
 set +e
 
 if [[ $1 == psql:* ]]; then
-  load_ip_and_container
+  load_container_id
 fi
 
 case "$1" in
@@ -37,7 +37,7 @@ case "$1" in
     docker exec "$PSQL_CONTAINER_NAME" su - postgres -c "psql --command \"CREATE USER $DATABASE WITH PASSWORD '$PASSWORD';\";\
       createdb -E utf8 -O $DATABASE $DATABASE;\
       psql --command \"GRANT ALL PRIVILEGES ON DATABASE $DATABASE TO $DATABASE;\"" > /dev/null
-    set_env_for "$APP"
+    set_link_and_env_for "$APP"
     ;;
 
   psql:delete)
@@ -47,8 +47,7 @@ case "$1" in
     docker exec "$PSQL_CONTAINER_NAME" su - postgres -c "dropdb $DATABASE; dropuser $DATABASE" > /dev/null
     rm -f "$PSQL_ROOT/db_$APP" "$PSQL_ROOT/pass_$APP"
     if [[ -d "$DOKKU_ROOT/$APP" ]]; then
-      dokku_log_info1 "Unsetting config vars for $APP"
-      dokku config:unset-norestart "$APP" DATABASE_URL POSTGRESQL_URL DB_TYPE DB_HOST DB_PORT DB_NAME DB_USER DB_PASS &> /dev/null
+      unset_link_and_env_for "$APP"
     fi
     ;;
 
@@ -64,12 +63,12 @@ case "$1" in
     fi
     OLD_ID=$(docker ps -f status=exited | grep "$PSQL_CONTAINER_NAME" | awk '{print $1}')
     if [[ -n $OLD_ID ]]; then
-        OLD_ID=$(docker rm $OLD_ID)
-        dokku_log_info1 "Removed stale Postgresql container $OLD_ID"
+      dokku_log_info1 "Restarting previously stopped Postgresql container $OLD_ID"
+      docker start "$OLD_ID" > /dev/null
+      exit 0
     fi
     dokku_log_info1 "Starting Postgresql server"
     docker run -d -v $PSQL_ROOT/data:/var/lib/postgresql/data --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE" > /dev/null
-    restart_apps
     ;;
 
   psql:restart)

@@ -4,7 +4,7 @@ dokku-psql-single-container is a plugin for [dokku][dokku] that provides a Postg
 
 It uses the official Postgresql docker image (version 9.3) by default but you can provide an alternative image.
 
-This version is compatible with dokku 0.3.16.
+This version is compatible with dokku 0.3.17. (it requires the `docker-options` plugin)
 
 ## Installation
 

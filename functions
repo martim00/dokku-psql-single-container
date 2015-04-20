@@ -7,6 +7,8 @@ APP="$2"
 PSQL_ROOT="$DOKKU_ROOT/.psql-sc"
 PSQL_IMAGE="${PSQL_SC_IMAGE:-postgres:9.3}"
 PSQL_CONTAINER_NAME="psql-single-container"
+PSQL_PORT=5432
+PSQL_HOST=postgres
 
 check_already_exists() {
   [[ -f "$PSQL_ROOT/db_$APP" ]] && echo "Database for $APP already exists" && exit 1
@@ -24,19 +26,15 @@ check_container() {
   [[ -z "$PSQL_ID" ]] && echo "Postgresql container not started. Start with dokku psql:start" && exit 1
 }
 
-load_ip_and_container() {
+load_container_id() {
   PSQL_ID=$(docker ps -f status=running | grep "$PSQL_CONTAINER_NAME" | awk '{print $1}') || true
-  if [[ -n "$PSQL_ID" ]]; then
-    PRIVATE_IP=$(docker inspect "$PSQL_ID" | grep IPAddress | awk '{ print $2 }' | tr -d ',"')
-    PORT=5432
-  fi
 }
 
 db_url() {
   local APP="$1"
   local DATABASE=$(cat "$PSQL_ROOT/db_$APP")
   local PASSWORD=$(cat "$PSQL_ROOT/pass_$APP")
-  echo "postgresql://${DATABASE}:${PASSWORD}@${PRIVATE_IP}:${PORT}/${DATABASE}"
+  echo "postgresql://${DATABASE}:${PASSWORD}@${PSQL_HOST}:${PSQL_PORT}/${DATABASE}"
 }
 
 database_name() {
@@ -49,23 +47,22 @@ env_for() {
     local URL=$(db_url "$APP")
     local DATABASE=$(cat "$PSQL_ROOT/db_$APP")
     local PASSWORD=$(cat "$PSQL_ROOT/pass_$APP")
-    echo "DATABASE_URL=$URL POSTGRESQL_URL=$URL DB_TYPE=postgresql DB_HOST=$PRIVATE_IP DB_PORT=$PORT DB_NAME=$DATABASE DB_USER=$DATABASE DB_PASS=$PASSWORD"
+    echo "DATABASE_URL=$URL POSTGRESQL_URL=$URL DB_TYPE=postgresql DB_HOST=$PSQL_HOST DB_PORT=$PSQL_PORT DB_NAME=$DATABASE DB_USER=$DATABASE DB_PASS=$PASSWORD"
   fi
 }
 
-restart_apps() {
-  load_ip_and_container
-  for APP_NAME in $(find "$PSQL_ROOT/"* -maxdepth 0 -name 'db*' -printf '%f\n' | sed 's/.*db_//'); do
-    set_env_for "$APP_NAME"
-    dokku_log_info2 "Restarting application: $APP_NAME"
-    dokku ps:restart "$APP_NAME"
-  done
-}
-
-set_env_for() {
+set_link_and_env_for() {
   local APP="$1"
+  dokku docker-options:add "$APP" build,deploy,run "--link $PSQL_CONTAINER_NAME:$PSQL_HOST"
   dokku_log_info1 "Setting config vars for $APP"
   dokku config:set-norestart "$APP" $(env_for "$APP") &> /dev/null
+}
+
+unset_link_and_env_for() {
+  local APP="$1"
+  dokku docker-options:remove "$APP" build,deploy,run "--link $PSQL_CONTAINER_NAME:$PSQL_HOST"
+  dokku_log_info1 "Unsetting config vars for $APP"
+  dokku config:unset-norestart "$APP" DATABASE_URL POSTGRESQL_URL DB_TYPE DB_HOST DB_PORT DB_NAME DB_USER DB_PASS &> /dev/null
 }
 
 interactive_docker_exec() {
