@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE  ]] && set -x
 
+[[ -f "$DOKKU_ROOT/ENV"  ]] && source "$DOKKU_ROOT/ENV"
+
 APP="$2"
 PSQL_ROOT="$DOKKU_ROOT/.psql-sc"
-PSQL_IMAGE="postgres:9.3"
+PSQL_IMAGE="${PSQL_SC_IMAGE:-postgres:9.3}"
 PSQL_CONTAINER_NAME="psql-single-container"
 
 check_already_exists() {
