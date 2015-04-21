@@ -11,7 +11,7 @@ fi
 case "$1" in
   psql:admin_console)
     check_container
-    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM=$TERM su - postgres -c psql
+    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM=$TERM psql -h localhost -U postgres
     ;;
 
   psql:console)
@@ -53,7 +53,7 @@ case "$1" in
 
   psql:list)
     check_container
-    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM=$TERM su - postgres -c "psql --command \"\\l\""
+    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM=$TERM psql -h localhost -U postgres '\l'
     ;;
 
   psql:start)
