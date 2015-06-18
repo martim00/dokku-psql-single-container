@@ -4,7 +4,7 @@ dokku-psql-single-container is a plugin for [dokku][dokku] that provides a Postg
 
 It uses the official Postgresql docker image (version 9.3) by default but you can provide an alternative image.
 
-This version is compatible with dokku 0.3.17. (it requires the `docker-options` plugin)
+This version is compatible with dokku 0.3.17+. (it requires the `docker-options` plugin)
 
 ## Installation
 
@@ -91,6 +91,15 @@ $ dokku psql:restore foo < filename.dump # Server side
 ### Copy database foo to database bar using pipe:
 ```
 $ dokku psql:dump foo | dokku psql:restore bar # Server side
+```
+
+## Known issues
+
+When upgrading Dokku to a newer version, owner of `/home/dokku/.psql-sc/data` will be changed to `dokku`. It can causes errors with the container.
+
+You’ll have to restore the previous owner by issuing the following command:
+```
+$ chown 999 -R /home/dokku/.psql-sc/data
 ```
 
 ## Acknowledgements
