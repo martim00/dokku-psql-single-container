@@ -11,7 +11,7 @@ fi
 case "$1" in
   psql:admin_console)
     check_container
-    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM=$TERM psql -h localhost -U postgres
+    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM="$TERM" psql -h localhost -U postgres
     ;;
 
   psql:console)
@@ -30,8 +30,8 @@ case "$1" in
     check_container; check_app; verify_app_name "$APP"; check_already_exists
     PASSWORD=$(openssl rand -hex 32)
     DATABASE=$(database_name "$APP")
-    echo $DATABASE > "$PSQL_ROOT/db_$APP"
-    echo $PASSWORD > "$PSQL_ROOT/pass_$APP"
+    echo "$DATABASE" > "$PSQL_ROOT/db_$APP"
+    echo "$PASSWORD" > "$PSQL_ROOT/pass_$APP"
     chmod 600 "$PSQL_ROOT/db_$APP" "$PSQL_ROOT/pass_$APP"
     dokku_log_info1 "Creating database $APP"
     docker exec "$PSQL_CONTAINER_NAME" su - postgres -c "psql --command \"CREATE USER $DATABASE WITH PASSWORD '$PASSWORD';\";\
@@ -53,7 +53,7 @@ case "$1" in
 
   psql:list)
     check_container
-    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM=$TERM psql -h localhost -U postgres -c '\l'
+    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM="$TERM" psql -h localhost -U postgres -c '\l'
     ;;
 
   psql:start)
@@ -68,7 +68,7 @@ case "$1" in
       exit 0
     fi
     dokku_log_info1 "Starting Postgresql server"
-    docker run -d -v $PSQL_ROOT/data:/var/lib/postgresql/data --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE" > /dev/null
+    docker run -d -v "$PSQL_ROOT/data:/var/lib/postgresql/data" --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE" > /dev/null
     ;;
 
   psql:restart)

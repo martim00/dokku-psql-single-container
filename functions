@@ -67,5 +67,5 @@ unset_link_and_env_for() {
 
 interactive_docker_exec() {
   local TTY_OPT=$([[ -t 0 ]] && echo "--tty")
-  docker exec --interactive $TTY_OPT "$@"
+  docker exec --interactive "$TTY_OPT" "$@"
 }
