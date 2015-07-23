@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE  ]] && set -x
 
-[[ -f "$DOKKU_ROOT/ENV"  ]] && source "$DOKKU_ROOT/ENV"
-
 APP="$2"
 PSQL_ROOT="$DOKKU_ROOT/.psql-sc"
-PSQL_IMAGE="${PSQL_SC_IMAGE:-postgres:9.3}"
 PSQL_CONTAINER_NAME="psql-single-container"
 PSQL_PORT=5432
 PSQL_HOST=postgres
@@ -55,17 +52,23 @@ set_link_and_env_for() {
   local APP="$1"
   dokku docker-options:add "$APP" build,deploy,run "--link $PSQL_CONTAINER_NAME:$PSQL_HOST"
   dokku_log_info1 "Setting config vars for $APP"
-  dokku config:set-norestart "$APP" $(env_for "$APP") &> /dev/null
+  dokku config:set --no-restart "$APP" $(env_for "$APP") &> /dev/null
 }
 
 unset_link_and_env_for() {
   local APP="$1"
   dokku docker-options:remove "$APP" build,deploy,run "--link $PSQL_CONTAINER_NAME:$PSQL_HOST"
   dokku_log_info1 "Unsetting config vars for $APP"
-  dokku config:unset-norestart "$APP" DATABASE_URL POSTGRESQL_URL DB_TYPE DB_HOST DB_PORT DB_NAME DB_USER DB_PASS &> /dev/null
+  dokku config:unset --no-restart "$APP" DATABASE_URL POSTGRESQL_URL DB_TYPE DB_HOST DB_PORT DB_NAME DB_USER DB_PASS &> /dev/null
 }
 
 interactive_docker_exec() {
   local TTY_OPT=$([[ -t 0 ]] && echo "--tty")
   docker exec --interactive "$TTY_OPT" "$@"
+}
+
+export_psql_image() {
+  PSQL_IMAGE="$(dokku config:get --global PSQL_SC_IMAGE)" || true
+  PSQL_IMAGE="${PSQL_IMAGE:-postgres:9.3}"
+  export PSQL_IMAGE
 }
