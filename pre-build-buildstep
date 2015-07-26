@@ -2,6 +2,7 @@
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 source "$(dirname $0)/functions"
 
+export_psql_root
 [[ ! -f "$PSQL_ROOT/db_$1" ]] && exit 0
 load_container_id
 [[ -z "$PSQL_ID" ]] && dokku psql:start
