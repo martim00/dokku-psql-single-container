@@ -77,3 +77,12 @@ export_psql_root() {
   PSQL_ROOT="${PSQL_ROOT:-$DOKKU_ROOT/.psql-sc}"
   export PSQL_ROOT
 }
+
+bind_external_options() {
+  local BIND_EXTERNAL=$(dokku config:get --global PSQL_SC_BIND_EXTERNAL)
+  if [[ $BIND_EXTERNAL = 'true' ]]; then
+    echo "-p 0.0.0.0:$PSQL_PORT:$PSQL_PORT"
+  else
+    echo ''
+  fi
+}
