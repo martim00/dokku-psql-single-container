@@ -5,6 +5,8 @@ source "$(dirname $0)/functions"
 set +e
 
 if [[ $1 == psql:* ]]; then
+  export_psql_image
+  export_psql_root
   load_container_id
 fi
 
@@ -67,7 +69,6 @@ case "$1" in
       docker start "$OLD_ID" > /dev/null
       exit 0
     fi
-    export_psql_image
     dokku_log_info1 "Starting Postgresql server"
     docker run -d -v "$PSQL_ROOT/data:/var/lib/postgresql/data" --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE" > /dev/null
     ;;

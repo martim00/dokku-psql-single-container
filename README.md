@@ -23,6 +23,16 @@ running `dokku plugins-install`.
 dokku config:set --global PSQL_SC_IMAGE=postgres:9.4
 ```
 
+### Setting a custom PSQL_ROOT
+
+By default, this plugin stores its data in `$DOKKU_ROOT/.psql-sc`. If you want
+to store it elsewhere, you have to set the `PSQL_SC_ROOT` in the global dokku
+config. You should do it **before** running `dokku plugins-install`.
+
+```bash
+dokku config:set --global PSQL_SC_ROOT=/my/custom/path
+```
+
 ## Commands
 ```
 $ dokku help

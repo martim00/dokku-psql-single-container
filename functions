@@ -2,7 +2,6 @@
 set -eo pipefail; [[ $DOKKU_TRACE  ]] && set -x
 
 APP="$2"
-PSQL_ROOT="$DOKKU_ROOT/.psql-sc"
 PSQL_CONTAINER_NAME="psql-single-container"
 PSQL_PORT=5432
 PSQL_HOST=postgres
@@ -71,4 +70,10 @@ export_psql_image() {
   PSQL_IMAGE="$(dokku config:get --global PSQL_SC_IMAGE)" || true
   PSQL_IMAGE="${PSQL_IMAGE:-postgres:9.3}"
   export PSQL_IMAGE
+}
+
+export_psql_root() {
+  PSQL_ROOT="$(dokku config:get --global PSQL_SC_ROOT)" || true
+  PSQL_ROOT="${PSQL_ROOT:-$DOKKU_ROOT/.psql-sc}"
+  export PSQL_ROOT
 }
