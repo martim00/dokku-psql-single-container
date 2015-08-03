@@ -8,4 +8,4 @@ mkdir -p "$PSQL_ROOT/data"
 chown dokku:dokku -R "$PSQL_ROOT" &> /dev/null || true
 PASSWORD=$(openssl rand -hex 32)
 export_psql_image
-docker run $(bind_external_options) -v "$PSQL_ROOT/data":/var/lib/postgresql/data -d -e POSTGRES_PASSWORD=$PASSWORD --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE"
+docker run $(bind_ip_options) -v "$PSQL_ROOT/data":/var/lib/postgresql/data -d -e POSTGRES_PASSWORD=$PASSWORD --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE"

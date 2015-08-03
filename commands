@@ -70,7 +70,7 @@ case "$1" in
       exit 0
     fi
     dokku_log_info1 "Starting Postgresql server"
-    docker run $(bind_external_options) -d -v "$PSQL_ROOT/data:/var/lib/postgresql/data" --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE" > /dev/null
+    docker run $(bind_ip_options) -d -v "$PSQL_ROOT/data:/var/lib/postgresql/data" --name "$PSQL_CONTAINER_NAME" "$PSQL_IMAGE" > /dev/null
     ;;
 
   psql:restart)
