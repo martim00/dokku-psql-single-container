@@ -35,14 +35,14 @@ If you are using custom `PSQL_SC_ROOT` directory, make sure it is writable by
 dokku config:set --global PSQL_SC_ROOT=/my/custom/path
 ```
 
-### Binding Postgresql port to all interfaces
+### Binding Postgresql port to another IP
 
 By default, the container is not reachable from outside. The container can be
-reachable publicly by setting `PSQL_SC_BIND_EXTERNAL` to true in the global
-dokku config.
+bound to an IP of your choice by setting `PSQL_SC_BIND_IP` to an IP in the
+global dokku config.
 
 ```bash
-dokku config:set --global PSQL_SC_BIND_EXTERNAL=true
+dokku config:set --global PSQL_SC_BIND_IP=0.0.0.0
 ```
 
 ## Commands
