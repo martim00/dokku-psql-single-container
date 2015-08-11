@@ -53,12 +53,14 @@ $ dokku help
     psql:create      <app>                          Create a Postgresql database for <app>
     psql:delete      <app>                          Delete Postgresql database for <app>
     psql:dump        <app> > <filename.dump>        Dump <app> database to PG dump format
+    psql:link        <source> <target>              Link <source> app DB to <target> app
     psql:list                                       List all databases
     psql:restart                                    Restart the Postgresql docker container
     psql:restore     <app> < <filename.*>           Restore database to <app> from any format exported by pg_dump
     psql:start                                      Start the Postgresql docker container if it isn't running
     psql:status                                     Shows status of Postgresql
     psql:stop                                       Stop the Postgresql docker container
+    psql:unlink      <app>                          Remove DB config for <app>
     psql:url         <app>                          Get DATABASE_URL for <app>
 ```
 
@@ -113,6 +115,23 @@ $ dokku psql:restore foo < filename.dump # Server side
 ### Copy database foo to database bar using pipe:
 ```
 $ dokku psql:dump foo | dokku psql:restore bar # Server side
+```
+
+### Link an existing DB to another application
+```
+$ dokku psql:link app_with_db target_app # Server side
+```
+
+### Unlink an application
+```
+$ dokku psql:unlink foo # Server side
+```
+
+If you inadvertently unlink an app owning a DB, there is a very easy way to
+recover the configuration vars:
+
+```
+$ dokku psql:link foo foo # Server side
 ```
 
 ## Known issues

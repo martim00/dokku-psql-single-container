@@ -103,12 +103,27 @@ case "$1" in
     echo "Postgresql container not running"
     ;;
 
+  psql:link)
+    check_container; check_app; verify_app_name "$APP"; check_exists
+    TARGET_APP="$3"
+    [[ -z $TARGET_APP ]] && echo "Target app is missing" && exit 1
+    verify_app_name "$TARGET_APP"
+    set_link_and_env_for "$APP" "$TARGET_APP"
+    ;;
+
+  psql:unlink)
+    check_app; verify_app_name "$APP"
+    unset_link_and_env_for "$APP"
+    ;;
+
   help)
     cat && cat<<EOF
     psql:console     <app>                          Launch a postgresql console for <app>
     psql:url         <app>                          Get DATABASE_URL for <app>
     psql:create      <app>                          Create a Postgresql database for <app>
     psql:delete      <app>                          Delete Postgresql database for <app>
+    psql:link        <source> <target>              Link <source> app DB to <target> app
+    psql:unlink      <app>                          Remove DB config for <app>
     psql:dump        <app> > <filename.dump>        Dump <app> database to PG dump format
     psql:restore     <app> < <filename.*>           Restore database to <app> from any format exported by pg_dump
     psql:admin_console                              Launch a postgresql console as admin user
