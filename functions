@@ -48,10 +48,11 @@ env_for() {
 }
 
 set_link_and_env_for() {
-  local APP="$1"
-  dokku docker-options:add "$APP" build,deploy,run "--link $PSQL_CONTAINER_NAME:$PSQL_HOST"
-  dokku_log_info1 "Setting config vars for $APP"
-  dokku config:set --no-restart "$APP" $(env_for "$APP") &> /dev/null
+  local SOURCE="$1"
+  local TARGET=${2:-$SOURCE}
+  dokku docker-options:add "$TARGET" build,deploy,run "--link $PSQL_CONTAINER_NAME:$PSQL_HOST"
+  dokku_log_info1 "Setting config vars for $TARGET"
+  dokku config:set --no-restart "$TARGET" $(env_for "$SOURCE") &> /dev/null
 }
 
 unset_link_and_env_for() {
