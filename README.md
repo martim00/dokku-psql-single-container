@@ -62,6 +62,7 @@ $ dokku help
     psql:stop                                       Stop the Postgresql docker container
     psql:unlink      <app>                          Remove DB config for <app>
     psql:url         <app>                          Get DATABASE_URL for <app>
+    psql:version                                    Output version of plugin
 ```
 
 ## Info
