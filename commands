@@ -116,6 +116,11 @@ case "$1" in
     unset_link_and_env_for "$APP"
     ;;
 
+  psql:version)
+    echo -n "v"
+    cat "$(dirname $0)/VERSION"
+    ;;
+
   help)
     cat && cat<<EOF
     psql:console     <app>                          Launch a postgresql console for <app>
@@ -132,6 +137,7 @@ case "$1" in
     psql:stop                                       Stop the Postgresql docker container
     psql:status                                     Shows status of Postgresql
     psql:list                                       List all databases
+    psql:version                                    Output version of plugin
 EOF
     ;;
 esac
