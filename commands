@@ -95,7 +95,10 @@ case "$1" in
     check_container; check_app; verify_app_name "$APP"; check_exists
     DATABASE=$(cat "$PSQL_ROOT/db_$APP")
     PASSWORD=$(cat "$PSQL_ROOT/pass_$APP")
-    cat - | docker exec -i "$PSQL_CONTAINER_NAME" env PGPASSWORD="$PASSWORD" pg_restore -h localhost -cO -d "$DATABASE" -U "$DATABASE" -w
+    if [[ -t 0 ]]; then
+      echo "No data provided on stdin." && exit 1
+    fi
+    docker exec -i "$PSQL_CONTAINER_NAME" env PGPASSWORD="$PASSWORD" pg_restore -h localhost -cO -d "$DATABASE" -U "$DATABASE" -w
     ;;
 
   psql:status)
