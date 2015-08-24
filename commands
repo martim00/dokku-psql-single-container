@@ -95,7 +95,10 @@ case "$1" in
     check_container; check_app; verify_app_name "$APP"; check_exists
     DATABASE=$(cat "$PSQL_ROOT/db_$APP")
     PASSWORD=$(cat "$PSQL_ROOT/pass_$APP")
-    cat - | docker exec -i "$PSQL_CONTAINER_NAME" env PGPASSWORD="$PASSWORD" pg_restore -h localhost -cO -d "$DATABASE" -U "$DATABASE" -w
+    if [[ -t 0 ]]; then
+      echo "No data provided on stdin." && exit 1
+    fi
+    docker exec -i "$PSQL_CONTAINER_NAME" env PGPASSWORD="$PASSWORD" pg_restore -h localhost -cO -d "$DATABASE" -U "$DATABASE" -w
     ;;
 
   psql:status)
@@ -123,21 +126,21 @@ case "$1" in
 
   help)
     cat && cat<<EOF
-    psql:console     <app>                          Launch a postgresql console for <app>
-    psql:url         <app>                          Get DATABASE_URL for <app>
-    psql:create      <app>                          Create a Postgresql database for <app>
-    psql:delete      <app>                          Delete Postgresql database for <app>
-    psql:link        <source> <target>              Link <source> app DB to <target> app
-    psql:unlink      <app>                          Remove DB config for <app>
-    psql:dump        <app> > <filename.dump>        Dump <app> database to PG dump format
-    psql:restore     <app> < <filename.*>           Restore database to <app> from any format exported by pg_dump
-    psql:admin_console                              Launch a postgresql console as admin user
-    psql:restart                                    Restart the Postgresql docker container
-    psql:start                                      Start the Postgresql docker container if it isn't running
-    psql:stop                                       Stop the Postgresql docker container
-    psql:status                                     Shows status of Postgresql
-    psql:list                                       List all databases
-    psql:version                                    Output version of plugin
+    psql:console <app>, Launch a postgresql console for <app>
+    psql:url <app>, Get DATABASE_URL for <app>
+    psql:create <app>, Create a Postgresql database for <app>
+    psql:delete <app>, Delete Postgresql database for <app>
+    psql:link <source> <target>, Link <source> app DB to <target> app
+    psql:unlink <app>, Remove DB config for <app>
+    psql:dump <app> > <filename.dump>, Dump <app> database to PG dump format
+    psql:restore <app> < <filename.*>, Restore database to <app> from any format exported by pg_dump
+    psql:admin_console, Launch a postgresql console as admin user
+    psql:restart, Restart the Postgresql docker container
+    psql:start, Start the Postgresql docker container if it isn't running
+    psql:stop, Stop the Postgresql docker container
+    psql:status, Shows status of Postgresql
+    psql:list, List all databases
+    psql:version, Output version of plugin
 EOF
     ;;
 esac
