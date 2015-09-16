@@ -56,7 +56,7 @@ $ dokku help
     psql:link        <source> <target>              Link <source> app DB to <target> app
     psql:list                                       List all databases
     psql:restart                                    Restart the Postgresql docker container
-    psql:restore     <app> < <filename.*>           Restore database to <app> from any format exported by pg_dump
+    psql:restore     <app> < <filename.*>           Restore database to <app> from any non-plain-text format exported by pg_dump
     psql:start                                      Start the Postgresql docker container if it isn't running
     psql:status                                     Shows status of Postgresql
     psql:stop                                       Stop the Postgresql docker container
@@ -111,6 +111,12 @@ $ dokku psql:dump foo > filename.dump # Server side
 ### Restore database from dump:
 ```
 $ dokku psql:restore foo < filename.dump # Server side
+```
+
+For plain-text format, you should do this instead:
+
+```shell
+$ dokku psql:console < dump.sql
 ```
 
 ### Copy database foo to database bar using pipe:
