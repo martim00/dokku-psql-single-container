@@ -133,7 +133,7 @@ case "$1" in
     psql:link <source> <target>, Link <source> app DB to <target> app
     psql:unlink <app>, Remove DB config for <app>
     psql:dump <app> > <filename.dump>, Dump <app> database to PG dump format
-    psql:restore <app> < <filename.*>, Restore database to <app> from any format exported by pg_dump
+    psql:restore <app> < <filename.*>, Restore database to <app> from any non-plain-text format exported by pg_dump
     psql:admin_console, Launch a postgresql console as admin user
     psql:restart, Restart the Postgresql docker container
     psql:start, Start the Postgresql docker container if it isn't running
