@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
-source "$PLUGIN_PATH/common/functions"
+
+PLUGIN_BASE_PATH="$PLUGIN_PATH"
+if [[ -n $DOKKU_API_VERSION ]]; then
+  PLUGIN_BASE_PATH="$PLUGIN_ENABLED_PATH"
+fi
+source "$PLUGIN_BASE_PATH/common/functions"
 source "$(dirname $0)/functions"
 set +e
 
@@ -121,11 +126,11 @@ case "$1" in
 
   psql:version)
     echo -n "v"
-    cat "$(dirname $0)/VERSION"
+    cat "$(dirname "$0")/VERSION"
     ;;
 
   help)
-    cat && cat<<EOF
+    HELP=$(cat<<EOF
     psql:console <app>, Launch a postgresql console for <app>
     psql:url <app>, Get DATABASE_URL for <app>
     psql:create <app>, Create a Postgresql database for <app>
@@ -136,11 +141,17 @@ case "$1" in
     psql:restore <app> < <filename.*>, Restore database to <app> from any non-plain-text format exported by pg_dump
     psql:admin_console, Launch a postgresql console as admin user
     psql:restart, Restart the Postgresql docker container
-    psql:start, Start the Postgresql docker container if it isn't running
+    psql:start, Start the Postgresql docker container if it isn’t running
     psql:stop, Stop the Postgresql docker container
     psql:status, Shows status of Postgresql
     psql:list, List all databases
     psql:version, Output version of plugin
 EOF
+)
+    if [[ -n $DOKKU_API_VERSION ]]; then
+      echo "$HELP"
+    else
+      cat && echo "$HELP"
+    fi
     ;;
 esac
