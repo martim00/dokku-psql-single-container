@@ -8,9 +8,13 @@ This version is compatible with dokku 0.3.26+.
 
 ## Installation
 
-```
-git clone https://github.com/Flink/dokku-psql-single-container /var/lib/dokku/plugins/psql-sc
-dokku plugins-install
+```shell
+# dokku 0.3.26
+$ git clone https://github.com/Flink/dokku-psql-single-container.git /var/lib/dokku/plugins/psql-sc
+$ dokku plugins-install
+
+# dokku 0.4+
+$ dokku plugin:install https://github.com/Flink/dokku-psql-single-container.git
 ```
 
 ### Providing an alternative docker image for PostgreSQL
