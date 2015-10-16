@@ -62,11 +62,6 @@ unset_link_and_env_for() {
   dokku config:unset --no-restart "$APP" DATABASE_URL POSTGRESQL_URL DB_TYPE DB_HOST DB_PORT DB_NAME DB_USER DB_PASS &> /dev/null
 }
 
-interactive_docker_exec() {
-  local TTY_OPT=$([[ -t 0 ]] && echo "--tty")
-  docker exec --interactive "$TTY_OPT" "$@"
-}
-
 export_psql_image() {
   PSQL_IMAGE="$(dokku config:get --global PSQL_SC_IMAGE)" || true
   PSQL_IMAGE="${PSQL_IMAGE:-postgres:9.3}"

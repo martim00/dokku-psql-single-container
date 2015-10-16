@@ -18,14 +18,16 @@ fi
 case "$1" in
   psql:admin_console)
     check_container
-    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM="$TERM" psql -h localhost -U postgres
+    has_tty && TTY_OPTS="-t"
+    docker exec -i $TTY_OPTS "$PSQL_CONTAINER_NAME" env TERM="$TERM" psql -h localhost -U postgres
     ;;
 
   psql:console)
     check_container; check_app; verify_app_name "$APP"; check_exists
     DATABASE=$(cat "$PSQL_ROOT/db_$APP")
     PASSWORD=$(cat "$PSQL_ROOT/pass_$APP")
-    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM="$TERM" PGPASSWORD="$PASSWORD" psql -h localhost -U "$DATABASE" "$DATABASE"
+    has_tty && TTY_OPTS="-t"
+    docker exec -i $TTY_OPTS "$PSQL_CONTAINER_NAME" env TERM="$TERM" PGPASSWORD="$PASSWORD" psql -h localhost -U "$DATABASE" "$DATABASE"
     ;;
 
   psql:url)
@@ -60,7 +62,7 @@ case "$1" in
 
   psql:list)
     check_container
-    interactive_docker_exec "$PSQL_CONTAINER_NAME" env TERM="$TERM" psql -h localhost -U postgres -c '\l'
+    docker exec -i "$PSQL_CONTAINER_NAME" env TERM="$TERM" psql -h localhost -U postgres -c '\l'
     ;;
 
   psql:start)
