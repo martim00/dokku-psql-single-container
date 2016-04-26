@@ -143,7 +143,7 @@ case "$1" in
     psql:restore <app> < <filename.*>, Restore database to <app> from any non-plain-text format exported by pg_dump
     psql:admin_console, Launch a postgresql console as admin user
     psql:restart, Restart the Postgresql docker container
-    psql:start, Start the Postgresql docker container if it isn’t running
+    psql:start, Start the Postgresql docker container if it isn't running
     psql:stop, Stop the Postgresql docker container
     psql:status, Shows status of Postgresql
     psql:list, List all databases
