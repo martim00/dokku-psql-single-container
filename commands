@@ -60,6 +60,17 @@ case "$1" in
     fi
     ;;
 
+  psql:force_delete)
+    check_container; check_app; check_exists
+    DATABASE=$(cat "$PSQL_ROOT/db_$APP")
+    dokku_log_info1 "Forcing deleting database $APP"
+    docker exec "$PSQL_CONTAINER_NAME" su - postgres -c "update pg_database set datallowconn = 'false' where datname = '$DATABASE'; select pg_terminate_backend(pid) from pg_stat_activity where datname = '$DATABASE'; dropdb $DATABASE; dropuser $DATABASE" > /dev/null
+    rm -f "$PSQL_ROOT/db_$APP" "$PSQL_ROOT/pass_$APP"
+    if [[ -d "$DOKKU_ROOT/$APP" ]]; then
+      unset_link_and_env_for "$APP"
+    fi
+    ;;
+
   psql:list)
     check_container
     docker exec -i "$PSQL_CONTAINER_NAME" env TERM="$TERM" psql -h localhost -U postgres -c '\l'
