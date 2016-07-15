@@ -148,6 +148,7 @@ case "$1" in
     psql:url <app>, Get DATABASE_URL for <app>
     psql:create <app>, Create a Postgresql database for <app>
     psql:delete <app>, Delete Postgresql database for <app>
+    psql:force_delete <app>, Force delete a Postgresql database for <app>
     psql:link <source> <target>, Link <source> app DB to <target> app
     psql:unlink <app>, Remove DB config for <app>
     psql:dump <app> > <filename.dump>, Dump <app> database to PG dump format
